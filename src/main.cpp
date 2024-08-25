@@ -1,74 +1,106 @@
-/*
-*******************************************************************************
-* Copyright (c) 2022 by M5Stack
-*                  Equipped with StampS3 sample source code
-*                          配套  StampS3 示例源代码
-* Visit for more information: https://docs.m5stack.com/en/core/stamps3
-* 获取更多资料请访问: https://docs.m5stack.com/zh_CN/core/stamps3
-*
-* Describe: LED Show example.  LED展示示例
-* Date: 2023/1/11
-*******************************************************************************
-Press button to change LED status
-*/
 #include <Arduino.h>
+#define FASTLED_INTERNAL  // This suppresses the FastLED pragma messages
 #include <FastLED.h>
+#include <WiFi.h>
+#include "credentials.h"  // Include the credentials header file
 
-#define PIN_BUTTON 0
-#define PIN_LED    21
-#define NUM_LEDS   1
+// Pin definitions for different boards
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+    #define PIN_BUTTON 9
+    #define PIN_LED 2
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+    #define PIN_BUTTON 7  // External button for esp32-s3-matrix
+    #define PIN_LED 14
+#elif defined(ARDUINO_M5STACK_STAMPS3)
+    #define PIN_BUTTON 0
+    #define PIN_LED 21
+#else
+    #error "Unsupported board selected"
+#endif
+
+#define NUM_LEDS 1
 
 CRGB leds[NUM_LEDS];
-uint8_t led_ih             = 0;
-uint8_t led_status         = 0;
-String led_status_string[] = {"Rainbow", "Red", "Green", "Blue"};
 
-/* After StampS3 is started or reset
-   the program in the setUp () function will be run, and this part will only be
-   run once.
-*/
+// Function prototypes
+void setupWiFi();
+void checkWiFiStatus();
+void toggleLED();
+void checkButton();
+void debugPrint(const String& message);
+
 void setup() {
-    USBSerial.begin(115200);
-    USBSerial.println("StampS3 demo!");
+    Serial.begin(115200);
+    debugPrint("ESP32 Board Test - Setup started");
 
-    pinMode(PIN_BUTTON, INPUT);
-
+    pinMode(PIN_BUTTON, INPUT_PULLUP);
     FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
+    
+    setupWiFi();
+    
+    debugPrint("Setup completed");
 }
 
-/* After the program in setup() runs, it runs the program in loop()
-  The loop() function is an infinite loop in which the program runs repeatedly
-*/
 void loop() {
-    switch (led_status) {
-        case 0:
-            leds[0] = CHSV(led_ih, 255, 255);
-            break;
-        case 1:
-            leds[0] = CRGB::Red;
-            break;
-        case 2:
-            leds[0] = CRGB::Green;
-            break;
-        case 3:
-            leds[0] = CRGB::Blue;
-            break;
-        default:
-            break;
-    }
-    FastLED.show();
-    led_ih++;
-    delay(15);
+    checkWiFiStatus();
+    checkButton();
+    delay(100);
+}
 
-    if (!digitalRead(PIN_BUTTON)) {
-        delay(5);
-        if (!digitalRead(PIN_BUTTON)) {
-            led_status++;
-            if (led_status > 3) led_status = 0;
-            while (!digitalRead(PIN_BUTTON))
-                ;
-            USBSerial.print("LED status updated: ");
-            USBSerial.println(led_status_string[led_status]);
+void setupWiFi() {
+    debugPrint("Connecting to WiFi...");
+    WiFi.begin(ssid, password);
+    
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+        delay(500);
+        debugPrint(".");
+        attempts++;
+    }
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        debugPrint("WiFi connected");
+        debugPrint("IP address: " + WiFi.localIP().toString());
+    } else {
+        debugPrint("Failed to connect to WiFi");
+    }
+}
+
+void checkWiFiStatus() {
+    static unsigned long lastCheck = 0;
+    if (millis() - lastCheck > 10000) {  // Check every 10 seconds
+        lastCheck = millis();
+        if (WiFi.status() == WL_CONNECTED) {
+            debugPrint("WiFi still connected");
+        } else {
+            debugPrint("WiFi disconnected. Attempting to reconnect...");
+            setupWiFi();
         }
     }
+}
+
+void toggleLED() {
+    static bool ledOn = false;
+    ledOn = !ledOn;
+    leds[0] = ledOn ? CRGB::White : CRGB::Black;
+    FastLED.show();
+    debugPrint("LED toggled: " + String(ledOn ? "ON" : "OFF"));
+}
+
+void checkButton() {
+    static bool lastButtonState = HIGH;
+    bool buttonState = digitalRead(PIN_BUTTON);
+    
+    if (buttonState == LOW && lastButtonState == HIGH) {
+        delay(50);  // Simple debounce
+        if (digitalRead(PIN_BUTTON) == LOW) {
+            debugPrint("Button pressed");
+            toggleLED();
+        }
+    }
+    lastButtonState = buttonState;
+}
+
+void debugPrint(const String& message) {
+    Serial.println("[DEBUG] " + message);
 }
