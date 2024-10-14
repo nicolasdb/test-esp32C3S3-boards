@@ -1,80 +1,72 @@
-# ESP32 Board Test Project
+# ESP32 RFID Door Control System
 
-## Objective
+This project implements a door control system using an ESP32 microcontroller, an MFRC522 RFID reader, and a web interface. The system allows authorized RFID tags to open the door and provides a web-based interface for remote control and monitoring.
 
-This project provides a simple "getting started" code to test basic functionality across different ESP32 board environments, including ESP32-C3, ESP32-S3, and M5Stack StampS3. The code tests the following features:
+## Features
 
-1. WiFi connectivity
-2. On-board LED control
-3. Button functionality
+- RFID-based access control
+- Web interface for remote door control
+- Real-time door status updates via WebSocket
+- Configurable authorized RFID tags
+- Support for multiple ESP32 board variants
 
-## Project Structure
+## Hardware Requirements
 
-```
-.
-├── include/
-│   ├── README
-│   └── credentials.h
-├── lib/
-│   └── README
-├── src/
-│   └── main.cpp
-├── .gitignore
-├── platformio.ini
-└── README.md
-```
+- ESP32 board (supported variants: ESP32-C3, ESP32-S3, M5Stack Stamp S3)
+- MFRC522 RFID reader
+- Relay module for door lock control
+- WS2812 LED (optional, for visual feedback)
+
+## Software Dependencies
+
+- Arduino framework
+- PlatformIO
+- FastLED library
+- ArduinoWebsockets library
+- MFRC522 library
 
 ## Setup Instructions
 
-1. Clone this repository to your local machine.
-2. Open the project in PlatformIO IDE (e.g., VS Code with PlatformIO extension).
-3. Update the WiFi credentials in `include/credentials.h`:
-   ```cpp
-      #ifndef CREDENTIALS_H
-      #define CREDENTIALS_H
+1. Clone this repository or download the source code.
+2. Open the project in PlatformIO.
+3. Configure your WiFi credentials in a `credentials.h` file (see `credentials_example.h`).
+4. Connect the MFRC522 RFID reader, relay, and LED to your ESP32 board according to the pin definitions in `main.cpp`.
+5. Update the `authorized_tags.csv` file in the `data` folder with your authorized RFID tag IDs.
+6. Build and upload the project to your ESP32 board.
+7. Upload the SPIFFS data (contains the web interface and authorized tags list).
 
-      // WiFi credentials
-      const char* ssid = "YourWiFiSSID";
-      const char* password = "YourWiFiPassword";
+## Usage
 
-      #endif // CREDENTIALS_H   
-   ```
-   Replace "YourWiFiSSID" and "YourWiFiPassword" with your actual WiFi network name and password.
-4. For the ESP32-S3 board (esp32-s3-matrix), connect an external button to pin 7.
+1. Power on the ESP32 board.
+2. The system will connect to the configured WiFi network and print its IP address to the serial monitor.
+3. Access the web interface by navigating to the ESP32's IP address in a web browser.
+4. Use authorized RFID tags to open the door by presenting them to the RFID reader.
+5. Use the web interface to monitor the door status and open the door remotely.
 
-## Usage Instructions
+## Project Structure
 
-1. Select the appropriate board environment from the PlatformIO toolbar or by changing the `default_envs` in `platformio.ini`:
-   - For ESP32-C3, use `esp32-c3u`
-   - For ESP32-S3, use `esp32-s3-matrix`
-   - For M5Stack StampS3, use `stampS3`
+- `src/main.cpp`: Main application logic
+- `src/WebInterface.h` and `src/WebInterface.cpp`: Web server and WebSocket handling
+- `src/RFIDManager.h` and `src/RFIDManager.cpp`: RFID reader management
+- `data/index.html`: Web interface HTML file
+- `data/authorized_tags.csv`: List of authorized RFID tag IDs
 
-2. Click the "Upload" button in your PlatformIO IDE to compile and upload the code to your board.
+## Customization
 
-3. After successful upload, open the Serial Monitor in your IDE (make sure it's set to 115200 baud).
-
-4. You should see debug messages indicating the WiFi connection attempt and status.
-
-5. Press the on-board button (or external button for ESP32-S3) to toggle the LED on and off. You'll see corresponding messages in the Serial Monitor.
-
-6. The code will periodically check the WiFi status and attempt to reconnect if the connection is lost.
-
-## Board-Specific Information
-
-- ESP32-C3: LED on pin 2, button on pin 9
-- ESP32-S3: LED on pin 14, external button should be connected to pin 7
-- M5Stack StampS3: LED on pin 21, button on pin 0
+- Modify `data/authorized_tags.csv` to add or remove authorized RFID tags.
+- Adjust the `DOOR_OPEN_TIME` in `main.cpp` to change how long the door stays open.
+- Customize the web interface by editing `data/index.html`.
 
 ## Troubleshooting
 
-- If you encounter compilation errors, make sure you have the latest platform and framework versions installed in PlatformIO.
-- If the WiFi connection fails, double-check your credentials in `include/credentials.h`.
-- For the ESP32-S3 board, ensure the external button is properly connected to pin 7.
+- If the RFID reader is not detecting tags, check the wiring and ensure the correct SPI pins are used for your ESP32 variant.
+- If the web interface is not accessible, verify the WiFi connection and check the ESP32's IP address in the serial monitor.
+- For any other issues, check the serial monitor for debug messages and error reports.
 
 ## Contributing
 
-Feel free to fork this project and submit pull requests with improvements or additional features.
+Contributions to this project are welcome. Please fork the repository and submit a pull request with your improvements.
 
 ## License
 
-This project is open-source and available under the MIT License.
+This project is released under the MIT License. See the LICENSE file for details.

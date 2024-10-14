@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Door Control</title>
+    <script>
+        var ws;
+        function connectWebSocket() {
+            ws = new WebSocket('ws://' + location.hostname + ':81/');
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+                ws.send('getDoorState');
+            };
+            ws.onmessage = function(event) {
+                console.log('Received:', event.data);
+                var doorOpen = event.data === 'true';
+                document.getElementById('doorStatus').innerText = doorOpen ? 'OPEN' : 'CLOSED';
+            };
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                setTimeout(connectWebSocket, 2000);
+            };
+        }
+        function openDoor() {
+            fetch('/door/open').then(response => {
+                if (!response.ok) {
+                    console.error('Failed to open door');
+                }
+            });
+        }
+        window.onload = connectWebSocket;
+    </script>
+</head>
+<body>
+    <h1>ESP32 Door Control</h1>
+    <p>Door is currently <span id='doorStatus'>UNKNOWN</span></p>
+    <p><button onclick='openDoor()'>Open Door</button></p>
+</body>
+</html>
