@@ -11,7 +11,7 @@
 #define PIN_NEOPIXEL 2
 #define NUM_LEDS 1
 
-#define DOOR_OPEN_TIME 5000 // 5 seconds in milliseconds
+#define DOOR_OPEN_TIME 3000 // 3 seconds in milliseconds
 
 CRGB leds[NUM_LEDS];
 
