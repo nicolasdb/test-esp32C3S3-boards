@@ -7,7 +7,7 @@
 #include "credentials.h"
 
 #define PIN_BUTTON 9
-#define PIN_RELAY 3
+#define PIN_RELAY 1
 #define PIN_NEOPIXEL 2
 #define NUM_LEDS 1
 
@@ -40,15 +40,26 @@ void setup() {
         return;
     }
 
+    // Set LED to blue while connecting to Wi-Fi
+    leds[0] = CRGB::Blue;
+    FastLED.show();
+
     // Connect to Wi-Fi
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(1000);
         Serial.println("Connecting to WiFi...");
+        // Blink the blue LED while connecting
+        leds[0] = leds[0] == CRGB::Blue ? CRGB::Black : CRGB::Blue;
+        FastLED.show();
     }
     Serial.println("Connected to WiFi");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    // Set LED to initial door state (closed - red)
+    leds[0] = CRGB::Red;
+    FastLED.show();
 
     // Initialize WebInterface
     webInterface.setup();
